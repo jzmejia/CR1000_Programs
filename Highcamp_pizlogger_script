@@ -1,0 +1,73 @@
+'CRBasic script to take piezometric measurements
+'NOT CURRENTLY WORKING
+'
+'Test: take measurements every minute
+
+
+'Declare Variables and Units
+Public BattV
+Public PTemp_C
+Public TT
+Public TT0
+Public Digits
+Public Digits0
+Public Lvl
+Public VW(6)
+
+Alias VW(1)=Freq  'Resonant Frequency (Hz) Freq. of peak response 
+Alias VW(2)=Amp   'ResponseAmplitude (mV RMS) Amp. of peak response
+Alias VW(3)=SNRat 'Signal-to-noise ratio resp. amp / amp. largest noise canidate
+Alias VW(4)=NFreq 'Noise frequency (Hz) Freq. of largest noise canidate
+Alias VW(5)=DRat  'Decay ratio - Ending time-series amp / beginning time-series amp
+Alias VW(6)=TR    'Thermistor (Ohms) On-gage thermistor resistance
+
+Units BattV=Volts
+Units PTemp_C=Deg C
+Units TT=deg C
+Units TT0=deg C
+Units Digits=Digits
+Units Digits0=Digits
+Units Lvl=ft
+Units Freq=Hz
+Units Amp=mV RMS
+Units NFreq=Hz
+Units TR=ohms
+
+'Define Data Tables
+DataTable(Piezo_Test1,True,-1)
+  CardOut(0,1) 'store measurements on CF card
+  	Sample(1,Freq,FP2)
+	  Sample(1,Amp,FP2)
+	  Sample(1,SNRat,FP2)
+	  Sample(1,NFreq,FP2)
+	  Sample(1,DRat,FP2)
+	  Sample(1,TR,FP2)
+	  Sample(1,TT,FP2)
+	  Sample(1,Digits,IEEE4)
+	  Sample(1,Lvl,FP2)
+EndTable
+
+
+'Main Program
+BeginProg
+  SerialOpen(ComRS232,38400,0,0,0)
+  Scan(30,Sec,0,0)
+    
+    Battery(BattV)
+    PanelTemp(PTemp_C,_60Hz)
+  
+  
+  'Geokon 4500HD Vibrating Wire Piezometer measurement 'Freq'
+  'AVW200(Result, ComPort, NeighborAddr, PakBusAddr, Dest, AVWChan, MuxChan, Reps, BegFreq, EndFreq, ExVolt, Therm50_60Hz, Multiplier, Offset, AmpThreshold [optional])
+  AVW200(AVWRC,ComRS232,201,201,VWvalues(1),1,1,1,450,6500,2,_60HZ,1,0) 
+  		'Calculate thermistor temperature 'TT'
+		    TT=1/(1.4051E-3+2.369E-4*LN(TR)+1.019E-7*LN(TR)^3)-273.15
+      'Convert to digits
+        Digits=Freq^2/1000
+  		'Calculate water level 'Lvl' (PSI)
+		    Lvl=(Digits0-Digits)*0+(TT-TT0)*0
+		  'Convert water level 'Lvl' from PSI to ft
+		    Lvl=Lvl*2.3108
+ 
+  
+EndProg
