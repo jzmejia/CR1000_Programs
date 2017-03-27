@@ -31,30 +31,31 @@ Units Lvl=ft
 Units Freq=Hz
 Units Amp=mV RMS
 Units NFreq=Hz
-Units TR=ohms
+Units TR=ohms 
 
 'Define Data Tables
 DataTable(Piezo_Test1,True,-1)
   CardOut(0,1) 'store measurements on CF card
-  	Sample(1,Freq,FP2)
+  	  Sample(1,Freq,FP2)
 	  Sample(1,Amp,FP2)
 	  Sample(1,SNRat,FP2)
 	  Sample(1,NFreq,FP2)
 	  Sample(1,DRat,FP2)
 	  Sample(1,TR,FP2)
-	  Sample(1,TT,FP2)
-	  Sample(1,Digits,IEEE4)
+	  Sample(1,TT,FP2) 'calculated thermistor temp
+	  Sample(1,Digits,IEEE4) 'freq to calc presssure
 	  Sample(1,Lvl,FP2)
 EndTable
 
 
 'Main Program
 BeginProg
-  SerialOpen(ComRS232,38400,0,0,0)
-  Scan(30,Sec,0,0)
+  SerialOpen(ComRS232,38400,0,0,0) 
+  	'Main Scan
+  	Scan(30,Sec,0,0)
     
-    Battery(BattV)
-    PanelTemp(PTemp_C,_60Hz)
+    		Battery(BattV)	'measure battery voltage
+    		PanelTemp(PTemp_C,_60Hz) 'measure datalogger temperature
   
   
   'Geokon 4500HD Vibrating Wire Piezometer measurement 'Freq'
@@ -66,8 +67,12 @@ BeginProg
         Digits=Freq^2/1000
   		'Calculate water level 'Lvl' (PSI)
 		    Lvl=(Digits0-Digits)*0+(TT-TT0)*0
-		  'Convert water level 'Lvl' from PSI to ft
+		 'Convert water level 'Lvl' from PSI to ft
 		    Lvl=Lvl*2.3108
- 
-  
+		 'Calculate pressure
+		 'P=(Digits-Digits0)*G where G is a linear calibration factor
+		 'Pressure = (Current Reading - Initial Reading) x Linear Calibration Factor
+	'Call Data Tables and Store Data
+ 	CallTable Piezo_Test1
+    NextScan
 EndProg
