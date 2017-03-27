@@ -50,6 +50,7 @@ EndTable
 
 'Main Program
 BeginProg
+ 'Turn on communication from the data logger to AVW200 via RS232 port (may change later to COM1)
   SerialOpen(ComRS232,38400,0,0,0) 
   	'Main Scan
   	Scan(30,Sec,0,0)
@@ -74,5 +75,7 @@ BeginProg
 		 'Pressure = (Current Reading - Initial Reading) x Linear Calibration Factor
 	'Call Data Tables and Store Data
  	CallTable Piezo_Test1
+     'turn off communication via the RS232 port
+     SerialClose(ComRS232)
     NextScan
 EndProg
