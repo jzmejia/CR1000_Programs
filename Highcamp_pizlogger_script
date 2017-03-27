@@ -77,6 +77,6 @@ BeginProg
 	'Call Data Tables and Store Data
  	CallTable Piezo_Test1
      'turn off communication via the RS232 port
-     SerialClose(ComRS232)
+     'SerialClose(ComRS232)
     NextScan
 EndProg
