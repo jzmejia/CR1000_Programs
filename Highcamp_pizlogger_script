@@ -12,14 +12,15 @@ Public TT0
 Public Digits
 Public Digits0
 Public Lvl
-Public VW(6)
+Public Dst(6)
+Public AVWRC
 
-Alias VW(1)=Freq  'Resonant Frequency (Hz) Freq. of peak response 
-Alias VW(2)=Amp   'ResponseAmplitude (mV RMS) Amp. of peak response
-Alias VW(3)=SNRat 'Signal-to-noise ratio resp. amp / amp. largest noise canidate
-Alias VW(4)=NFreq 'Noise frequency (Hz) Freq. of largest noise canidate
-Alias VW(5)=DRat  'Decay ratio - Ending time-series amp / beginning time-series amp
-Alias VW(6)=TR    'Thermistor (Ohms) On-gage thermistor resistance
+Alias Dst(1)=Freq  'Resonant Frequency (Hz) Freq. of peak response 
+Alias Dst(2)=Amp   'ResponseAmplitude (mV RMS) Amp. of peak response
+Alias Dst(3)=SNRat 'Signal-to-noise ratio resp. amp / amp. largest noise canidate
+Alias Dst(4)=NFreq 'Noise frequency (Hz) Freq. of largest noise canidate
+Alias Dst(5)=DRat  'Decay ratio - Ending time-series amp / beginning time-series amp
+Alias Dst(6)=TR    'Thermistor (Ohms) On-gage thermistor resistance
 
 Units BattV=Volts
 Units PTemp_C=Deg C
@@ -61,7 +62,7 @@ BeginProg
   
   'Geokon 4500HD Vibrating Wire Piezometer measurement 'Freq'
   'AVW200(Result, ComPort, NeighborAddr, PakBusAddr, Dest, AVWChan, MuxChan, Reps, BegFreq, EndFreq, ExVolt, Therm50_60Hz, Multiplier, Offset, AmpThreshold [optional])
-  AVW200(AVWRC,ComRS232,201,201,VWvalues(1),1,1,1,450,6500,2,_60HZ,1,0) 
+  AVW200(AVWRC,ComRS232,201,201,Dst(1),1,1,1,450,6500,2,_60HZ,1,0) 
   		'Calculate thermistor temperature 'TT'
 		    TT=1/(1.4051E-3+2.369E-4*LN(TR)+1.019E-7*LN(TR)^3)-273.15
       'Convert to digits
