@@ -35,8 +35,13 @@ Units NFreq=Hz
 Units TR=ohms 
 
 'Define Data Tables
+'DataTable(TableName,TriggerVariable,Size)
 DataTable(Piezo_Test1,True,-1)
+'can alturnatively use the TableFile() option 64 to write to card
+'TableFile(FileName, 64, MaxFiles, NumRecs/TimeIntoInterval, Interval, Units, OutStat, LastFileName)
+
   CardOut(0,1) 'store measurements on CF card
+  	'Sample(Reps,Source,DataType)
   	  Sample(1,Freq,FP2)
 	  Sample(1,Amp,FP2)
 	  Sample(1,SNRat,FP2)
