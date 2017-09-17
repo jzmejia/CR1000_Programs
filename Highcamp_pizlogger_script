@@ -1,87 +1,82 @@
-'CRBasic script to take piezometric measurements
-'NOT CURRENTLY WORKING
-'
-'Test: take measurements every minute
-
+'CRBasic Program for the Geokon 4500HD Piezometer
+'Measuring water level (m) every 15 minutes
+'AVW200 PakBus Address is 201
+'Initial Zero Reading = 8857
 
 'Declare Variables and Units
 Public BattV
+Public FCLoaded
 Public PTemp_C
+Public AVWRC
+Public VW(6)
 Public TT
 Public TT0
 Public Digits
 Public Digits0
 Public Lvl
-Public Dst(6)
-Public AVWRC
+Public ZMode
+Public CAvg
 
-Alias Dst(1)=Freq  'Resonant Frequency (Hz) Freq. of peak response 
-Alias Dst(2)=Amp   'ResponseAmplitude (mV RMS) Amp. of peak response
-Alias Dst(3)=SNRat 'Signal-to-noise ratio resp. amp / amp. largest noise canidate
-Alias Dst(4)=NFreq 'Noise frequency (Hz) Freq. of largest noise canidate
-Alias Dst(5)=DRat  'Decay ratio - Ending time-series amp / beginning time-series amp
-Alias Dst(6)=TR    'Thermistor (Ohms) On-gage thermistor resistance
+Alias VW(1)=Freq
+Alias VW(2)=Amp
+Alias VW(3)=SNRat
+Alias VW(4)=NFreq
+Alias VW(5)=DRat
+Alias VW(6)=TR
 
 Units BattV=Volts
 Units PTemp_C=Deg C
 Units TT=deg C
 Units TT0=deg C
-Units Digits=Digits
+Units Digits=digits
 Units Digits0=Digits
 Units Lvl=ft
 Units Freq=Hz
 Units Amp=mV RMS
 Units NFreq=Hz
-Units TR=ohms 
+Units TR=ohms
 
 'Define Data Tables
-'DataTable(TableName,TriggerVariable,Size)
-DataTable(Piezo_Test1,True,-1)
-'can alturnatively use the TableFile() option 64 to write to card
-'TableFile(FileName, 64, MaxFiles, NumRecs/TimeIntoInterval, Interval, Units, OutStat, LastFileName)
-
-  CardOut(0,1) 'store measurements on CF card
-  	'Sample(Reps,Source,DataType)
-  	  Sample(1,Freq,FP2)
-	  Sample(1,Amp,FP2)
-	  Sample(1,SNRat,FP2)
-	  Sample(1,NFreq,FP2)
-	  Sample(1,DRat,FP2)
-	  Sample(1,TR,FP2)
-	  Sample(1,TT,FP2) 'calculated thermistor temp
-	  Sample(1,Digits,IEEE4) 'freq to calc presssure
-	  Sample(1,Lvl,FP2)
+DataTable(Table1,True,-1)
+  CardOut(0,-1) 
+	Sample(1,AVWRC,FP2)
+	Sample(1,Freq,FP2)
+	Sample(1,Amp,FP2)
+	Sample(1,SNRat,FP2)
+	Sample(1,NFreq,FP2)
+	Sample(1,DRat,FP2)
+	Sample(1,TR,FP2)
+	Sample(1,TT,FP2)
+	Sample(1,Digits,IEEE4)
+	Sample(1,Lvl,FP2)
+	Sample(1,PTemp_C,FP2)
+	Sample(1,BattV,FP2)
 EndTable
-
 
 'Main Program
 BeginProg
- 'Turn on communication from the data logger to AVW200 via RS232 port (may change later to COM1)
-  SerialOpen(ComRS232,38400,0,0,0) 
-  	'Main Scan
-  	Scan(30,Sec,0,0)
-    
-    		Battery(BattV)	'measure battery voltage
-    		PanelTemp(PTemp_C,_60Hz) 'measure datalogger temperature
-  
-  
-  'Geokon 4500HD Vibrating Wire Piezometer measurement 'Freq'
-  'AVW200(Result, ComPort, NeighborAddr, PakBusAddr, Dest, AVWChan, MuxChan, Reps, BegFreq, EndFreq, ExVolt, Therm50_60Hz, Multiplier, Offset, AmpThreshold [optional])
-  AVW200(AVWRC,ComRS232,201,201,Dst(1),1,1,1,450,6500,2,_60HZ,1,0) 
-  		'Calculate thermistor temperature 'TT'
-		    TT=1/(1.4051E-3+2.369E-4*LN(TR)+1.019E-7*LN(TR)^3)-273.15
-      'Convert to digits
-        Digits=Freq^2/1000
-  		'Calculate water level 'Lvl' (PSI)
-		    Lvl=(Digits0-Digits)*0+(TT-TT0)*0
-		 'Convert water level 'Lvl' from PSI to ft
-		    Lvl=Lvl*2.3108
-		 'Calculate pressure
-		 'P=(Digits-Digits0)*G where G is a linear calibration factor
-		 'Pressure = (Current Reading - Initial Reading) x Linear Calibration Factor
-	'Call Data Tables and Store Data
- 	CallTable Piezo_Test1
-     'turn off communication via the RS232 port
-     'SerialClose(ComRS232)
-    NextScan
+	SerialOpen(COM1,38400,0,0,0)
+	'Initialize calibration variables for
+	'Geokon 4500 Series Vibrating Wire Piezometer calculation 'Lvl'
+	CAvg=1 : Digits0=0 : TT0=0
+	'Load the most recent calibration values from the CalHist table
+	FCLoaded=LoadFieldCal(True)
+	'Main Scan
+	Scan(15,Min,1,0)
+		'Default CR1000 Datalogger Battery Voltage measurement 'BattV'
+		Battery(BattV)
+		'Default CR1000 Datalogger Wiring Panel Temperature measurement 'PTemp_C'
+		PanelTemp(PTemp_C,_60Hz)
+		'Geokon 4500 Series Vibrating Wire Piezometer measurement 'Freq'
+		AVW200(AVWRC,COM1,201,201,VW(1),1,1,1,450,6500,2,_60Hz,1,0)
+		'Calculate thermistor temperature 'TT'
+		TT=1/(1.4051E-3+2.369E-4*LN(TR)+1.019E-7*LN(TR)^3)-273.15
+		'Calculate digits 'Digits'
+		Digits=Freq^2/1000
+		'Calculate water level 'Lvl' (PSI)
+		Lvl=(Digits-8857)*-0.001713+(TT-10.8)*0.002004
+		'Convert water level 'Lvl' from MPa to m
+		Lvl=Lvl*101.97
+		CallTable Table1
+	NextScan
 EndProg
