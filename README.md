@@ -6,9 +6,9 @@ Geokon 4500HD Piezometer and Global Water ultra-sonic water level sensors.
 CR1000 Wiring
 -------------
 **Instruments:**
-  <li>Geokon 4500HD Piezometer with Armored Cable</li>
-  <li>Global Water WL705-048 Ultra sonic water level sensor</li>
-  <li>Global Water WL705-012 Ultra sonic water level sensor</li>
+-  Geokon 4500HD Piezometer with Armored Cable
+-  Global Water WL705-048 Ultra sonic water level sensor
+-  Global Water WL705-012 Ultra sonic water level sensor
   
 **Campbell logger components:**
 -  1x CR1000 Data Logger
