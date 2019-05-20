@@ -5,18 +5,18 @@ Geokon 4500HD Piezometer and Global Water ultra-sonic water level sensors.
 
 CR1000 Wiring
 -------------
-**Instruments:**<br>
+**Instruments:**
   <li>Geokon 4500HD Piezometer with Armored Cable</li>
   <li>Global Water WL705-048 Ultra sonic water level sensor</li>
   <li>Global Water WL705-012 Ultra sonic water level sensor</li>
-**Campbell logger components:**<br>
-
-  1x CR1000 Data Logger<br>
-  1x DCDC18R Voltage Booster (12V->18V)<br>
-  2x CURS100<br>
-  1x AVW200 Vibrating Wire Converter<br>
-  1x CFM100 CF card reader w/ 1 CF card<br>
-  1x DB9M to PIGTAIL/STRIP AND TIN 2ft cable<br>
+  
+**Campbell logger components:**
+-  1x CR1000 Data Logger
+-  1x DCDC18R Voltage Booster (12V->18V)
+-  2x CURS100
+-  1x AVW200 Vibrating Wire Converter
+-  1x CFM100 CF card reader w/ 1 CF card
+-  1x DB9M to PIGTAIL/STRIP AND TIN 2ft cable
 
 
 | RS-232 Wire | CR1000 Terminal | Description |
