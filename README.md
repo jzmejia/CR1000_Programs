@@ -3,6 +3,8 @@ Piezometer_Monitoring
 CRBasic scripts for CR1000 Data Logger to record measurements from a<br>
 Geokon 4500HD Piezometer and Global Water ultra-sonic water level sensors.
 
+The codes here all work and are actively being used for data collection. 
+
 CR1000 Wiring
 -------------
 **Instruments:**
