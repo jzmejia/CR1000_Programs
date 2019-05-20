@@ -1,45 +1,84 @@
-'CRBasic Program for the Geokon 4500HD Piezometer
-'Measuring water level (m) every 15 minutes
-'AVW200 PakBus Address is 201
-'Initial Zero Reading = 8857
+'CR1000 Data Logger Script
+'Instruments:
+'  1x Geokon 4500HD Piezometer
+'		Requires AVW200 vibrating wire sensor
+'       meters of water
+'  1x Global Water Ultrasonic water level sensor 
+'     model: WL705-048
+'     used to measure water level (in)
+'  1x Global Water Ultra sonic water level sensor
+'     model: WL705-012
+'     used to measure surface lowering (ablation) (in)
+'		Requires:
+'		1x Voltage Coverter - DCDC18R used
+'		2x CURS100 100 Ohm Current Shunt Terminal Input Modules
+'	Each instrument is powered via the 
+'	Switched 12V peripheral and sensor power port
+'  SEE WIRING DIAGRAM IN README
 
-'Declare Variables and Units
-Public BattV
-Public FCLoaded
-Public PTemp_C
-Public AVWRC
-Public VW(6)
-Public TT
-Public TT0
-Public Digits
-Public Digits0
-Public Lvl
-Public ZMode
+' <NOTE: WL705 sensors require being powered for 15 seconds for 
+'  voltage to stabelize before a measurement is taken. JZM>
+' Script below measures piezometer pressure (converts this to
+' water level), and two distances: 1 (WL705-048), 2 (WL705-012)
+' Measurements are taken every 15 minutes on the hour, with a 15
+' second delay for the stabelization of WL705 signals.
+' EX: 12:00:16, 12:15:16, 12:30:16, 12:45:16, etc. 
+
+'NOTE: THE PAKBUS ADDRESS OF YOUR AVW200 IS VERY IMPORTANT
+'THIS NUMBER IS USED IN THE FOLLOWING SCRIPT AND IF IT IS NOT RIGHT
+'THE LOGGER WILL OUTPUT NAN BECAUSE IT WILL BE UNABLE TO COMM-
+'UNICATE WITH THE MODULE
+
+'Declare Variables and Units - Required
+Public BattV	'Battery Voltage
+Public FCLoaded	'Check if Field Calibration was Loaded
+Public PTemp_C	'DataLogger Temperature
+Public Abl		'My name for WL705-012 sensor output
+Public Stage	'My name for WL705-048 sensor output
+Public AVWRC	'AWV200 output
+Public VW(6)	'6 output default for AWV200 (contains desired data)
+Public TT		'Piezometer Temperature
+Public TT0		'Zero Temperature reading for calibration
+Public Digits	'Digits - calculated from VW(6) (Pressure)
+Public Digits0	'Digits zero reading (Pressure) Factory Reading
+Public Lvl		'Convert Pressure (digits) to water level
+Public ZMode	
 Public CAvg
 
-Alias VW(1)=Freq
-Alias VW(2)=Amp
-Alias VW(3)=SNRat
-Alias VW(4)=NFreq
-Alias VW(5)=DRat
-Alias VW(6)=TR
+Alias VW(1) = Freq	'Frequency Hz
+Alias VW(2) = Amp	'Amplitude
+Alias VW(3) = SNRat
+Alias VW(4) = NFreq
+Alias VW(5) = DRat
+Alias VW(6) = TR	'Sensor Temperature
 
-Units BattV=Volts
-Units PTemp_C=Deg C
-Units TT=deg C
-Units TT0=deg C
-Units Digits=digits
-Units Digits0=Digits
-Units Lvl=ft
-Units Freq=Hz
-Units Amp=mV RMS
-Units NFreq=Hz
-Units TR=ohms
+'Note: The units below are only used as a string
+'output on your datafiles. These do not affect
+'any calculations made in your script and
+'are not updated automatically
+Units BattV = Volts
+Units PTemp_C = Deg C
+Units Abl = in
+Units Stage = in
+Units TT = deg C
+Units TT0 = deg C
+Units Digits = digits
+Units Digits0 = digits
+Units Lvl = m
+Units Freq = Hz
+Units Amp = mV RMS
+Units NFreq = Hz
+Units TR = ohms
 
-'Define Data Tables
+'Define the variables/measurements you want to 
+'be output to your datatable
 DataTable(Table1,True,-1)
-  CardOut(0,-1) 
-	Sample(1,AVWRC,FP2)
+	DataInterval(0,15,Min,10) 'define how often to save data to table
+	CardOut(0,-1) 'output to cf card
+	Sample(1,BattV,FP2)
+	Sample(1,PTemp_C,FP2)
+	Sample(1,Abl,FP2,False)
+	Sample(1,Stage,FP2,False)
 	Sample(1,Freq,FP2)
 	Sample(1,Amp,FP2)
 	Sample(1,SNRat,FP2)
@@ -49,34 +88,73 @@ DataTable(Table1,True,-1)
 	Sample(1,TT,FP2)
 	Sample(1,Digits,IEEE4)
 	Sample(1,Lvl,FP2)
-	Sample(1,PTemp_C,FP2)
-	Sample(1,BattV,FP2)
 EndTable
 
-'Main Program
+'Calibration history table
+DataTable(CalHist,NewFieldCal,10)
+	CardOut(0,10)
+	SampleFieldCal
+EndTable
+
+'Begin Main Porgram
 BeginProg
-	SerialOpen(COM1,38400,0,0,0)
+	'SerialOpen below: The AVW200 peripheral is powered/connected
+	'to the CR1000 Data logger via a DB9M to PIGTAIL/STRIP AND TIN 
+	'cable that is wired into the COM1 Tx/Rx C Terminals
+	SerialOpen(Com1,38400,4,0,0)
+
 	'Initialize calibration variables for
-	'Geokon 4500 Series Vibrating Wire Piezometer calculation 'Lvl'
-	CAvg=1 : Digits0=0 : TT0=0
+	'CHANGE the following based on your piezometer's calibration report
+	'Zero Reading
+	CAvg=1 : Digits0=8726 : TT0=21.2
+	' Linear Calibration Factor (G) - MPa
+	G = -0.001713
 	'Load the most recent calibration values from the CalHist table
 	FCLoaded=LoadFieldCal(True)
 	'Main Scan
+	'Define interval to run this code: here 15 minutes
 	Scan(15,Min,1,0)
+	'Switch on power to sensors via Switched Power
+	SW12(1)
+	'Delay measurement 15 seconds to allow ultrasonic water
+	'level sensors to stabelize reading
+	Delay(0,15,Sec)
 		'Default CR1000 Datalogger Battery Voltage measurement 'BattV'
 		Battery(BattV)
-		'Default CR1000 Datalogger Wiring Panel Temperature measurement 'PTemp_C'
+		'Default CR1000 Datalogger Wiring Panel Temperature measurement
+		' 'PTemp_C'
 		PanelTemp(PTemp_C,_60Hz)
-		'Geokon 4500 Series Vibrating Wire Piezometer measurement 'Freq'
-		AVW200(AVWRC,COM1,201,201,VW(1),1,1,1,450,6500,2,_60Hz,1,0)
+		'========================================
+		'Generic 4-20 mA Input measurement 'Stage'
+		'Stage - output from WL705-048 (in)
+		VoltDiff(Stage,1,mV2500,1,True,0,_60Hz,-0.3525,717)
+		'========================================
+		'Generic 4-20 mA Input measurement 'Abl'
+		'Abl - WL705-012 (in)
+		VoltDiff(Abl,1,mV2500,2,True,0,_60Hz,-0.087525,179.01)
+		'========================================
+		'Geokon 4500 Series Vibrating Wire Piezometer measurement
+		'below 200 is the pakbus address
+		AVW200(AVWRC,Com1,0,200,VW(1),1,1,1,1000,4000,1,_60Hz,1,0)
 		'Calculate thermistor temperature 'TT'
 		TT=1/(1.4051E-3+2.369E-4*LN(TR)+1.019E-7*LN(TR)^3)-273.15
 		'Calculate digits 'Digits'
 		Digits=Freq^2/1000
-		'Calculate water level 'Lvl' (PSI)
-		Lvl=(Digits-8857)*-0.001713+(TT-10.8)*0.002004
-		'Convert water level 'Lvl' from MPa to m
-		Lvl=Lvl*101.97
+		'Calculate meters of water  'Lvl'
+		'G=-0.001713 MPa/digit (given in calibration report)
+		'Note: This does not include temp or baro corrections
+		Lvl=(Digits-Digits0)*G
+		'Convert MPa to meters of water
+		Lvl=Lvl*101.997
+		'Zeroing calibration for
+		'Geokon 4500 Series Vibrating Wire Piezometer 
+		'calculations 'Digits' and 'TT'
+		FieldCal(4,Digits,1,0,Digits0,ZMode,0,1,CAvg)
+		FieldCal(4,TT,1,0,TT0,ZMode,0,1,CAvg)
+		'Call Data Tables and Store Data
 		CallTable Table1
+		CallTable CalHist
+		'Turn off power to Water Level Sensors
+		SW12(0)
 	NextScan
 EndProg
